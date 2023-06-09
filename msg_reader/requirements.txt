@@ -1,0 +1,4 @@
+oci
+mysql-connector-python
+opentelemetry-api
+opentelemetry-sdk

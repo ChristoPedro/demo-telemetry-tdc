@@ -1,0 +1,4 @@
+flask
+oci
+opentelemetry-api
+opentelemetry-sdk
