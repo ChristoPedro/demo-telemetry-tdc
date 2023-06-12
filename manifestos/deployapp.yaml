@@ -1,12 +1,3 @@
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: producer-configmap
-data:
-  SERVICE_ENDPOINT: 'https://cell-1.queue.messaging.sa-saopaulo-1.oci.oraclecloud.com'
-  QUEUE_ID : ocid1.queue.oc1.sa-saopaulo-1.amaaaaaatsbrckqadpaq22po2cgxr6ehip2y54yz7hp26loti3dzdymom55q
-
----
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -31,6 +22,7 @@ spec:
           envFrom:
             - configMapRef:
                 name: producer-configmap
+
 ---
 apiVersion: v1
 kind: Service
@@ -51,25 +43,12 @@ spec:
     app: queue-producer
 
 ---
-
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: reader-configmap
-data:
-  SERVICE_ENDPOINT: 'https://cell-1.queue.messaging.sa-saopaulo-1.oci.oraclecloud.com'
-  QUEUE_ID : ocid1.queue.oc1.sa-saopaulo-1.amaaaaaatsbrckqadpaq22po2cgxr6ehip2y54yz7hp26loti3dzdymom55q
-  SECRET_ID: ocid1.vaultsecret.oc1.sa-saopaulo-1.amaaaaaatsbrckqazbam6wvbhanpldwv56kzzbmytgfq7eltinwxfumuuujq
-  HOST: 10.0.20.78
-  USER: pedrochristo
-
----
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: queue-reader
 spec:
-  replicas: 1
+  replicas: 3
   selector:
     matchLabels:
       app: queue-reader
@@ -78,7 +57,7 @@ spec:
       labels:
         app: queue-reader
       annotations:
-          instrumentation.opentelemetry.io/inject-python: 'true'
+          instrumentation.opentelemetry.io/inject-python: 'python'
     spec:
       containers:
         - name: queue-reader
@@ -86,58 +65,3 @@ spec:
           envFrom:
             - configMapRef:
                 name: reader-configmap
-
----
-
-apiVersion: opentelemetry.io/v1alpha1
-kind: OpenTelemetryCollector
-metadata:
-  name: simplest
-spec:
-  config: |
-    receivers:
-      otlp:
-        protocols:
-          grpc:
-          http:
-    exporters:
-      otlphttp:
-        endpoint: "https://aaaadb34ucfo6aaaaaaaaabmo4.apm-agt.sa-saopaulo-1.oci.oraclecloud.com/20200101/opentelemetry/private"
-        headers:
-          Authorization: "dataKey P4DWLN5K3IWNQ3CLBBPWQTP77BOB6Q7Y"
-      otlphttp/metrics:
-        endpoint: "https://aaaadb34ucfo6aaaaaaaaabmo4.apm-agt.sa-saopaulo-1.oci.oraclecloud.com/20200101/opentelemetry"
-        headers:
-          Authorization: "dataKey P4DWLN5K3IWNQ3CLBBPWQTP77BOB6Q7Y"
-      otlp/jaeger:
-        endpoint: "simple-prod-collector:4317"
-        tls:
-          insecure: true
-          insecure_skip_verify: true
-    service:
-      pipelines:
-        traces:
-          receivers: [otlp]
-          processors: []
-          exporters: [otlphttp, otlp/jaeger]
-        metrics:
-          receivers: [otlp]
-          processors: []
-          exporters: [otlphttp/metrics]
-
----
-
-apiVersion: opentelemetry.io/v1alpha1
-kind: Instrumentation
-metadata:
-  name: python
-spec:
-  exporter:
-    endpoint: http://simplest-collector:4318
-  propagators:
-    - tracecontext
-    - baggage
-    - b3
-  sampler:
-    type: parentbased_traceidratio
-    argument: "1"

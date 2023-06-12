@@ -1,0 +1,46 @@
+apiVersion: opentelemetry.io/v1alpha1
+kind: OpenTelemetryCollector
+metadata:
+  name: simplest
+spec:
+  config: |
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+          http:
+    exporters:
+      otlphttp:
+        endpoint: "<apm_endpoint>/20200101/opentelemetry/private"
+        headers:
+          Authorization: "dataKey <private_date_key>"
+      otlphttp/metrics:
+        endpoint: "<apm_endpoint>/20200101/opentelemetry"
+        headers:
+          Authorization: "dataKey <private_date_key>"
+    service:
+      pipelines:
+        traces:
+          receivers: [otlp]
+          processors: []
+          exporters: [otlphttp, otlp/jaeger]
+        metrics:
+          receivers: [otlp]
+          processors: []
+          exporters: [otlphttp/metrics]
+
+---
+apiVersion: opentelemetry.io/v1alpha1
+kind: Instrumentation
+metadata:
+  name: python
+spec:
+  exporter:
+    endpoint: http://simplest-collector:4318
+  propagators:
+    - tracecontext
+    - baggage
+    - b3
+  sampler:
+    type: parentbased_traceidratio
+    argument: "1"
