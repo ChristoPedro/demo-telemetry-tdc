@@ -42,14 +42,14 @@ kubectl apply -f https://github.com/open-telemetry/opentelemetry-operator/releas
 
 ### Dando permissão de Intance Principal para os nós de Kubernetes
 
-Para saber mais sobre Intance acesse a [documentação](https://docs.oracle.com/en-us/iaas/Content/Identity/Tasks/callingservicesfrominstances.htm)
+Para saber mais sobre Intance Principal acesse a [documentação](https://docs.oracle.com/en-us/iaas/Content/Identity/Tasks/callingservicesfrominstances.htm)
 
 Crie um Dynamic Group com a seguinte regra.
 
 ```
 instance.compartment.id = '<compartment_ocid>'
 ```
-- **compartment_ocid**, pelo do compartimento onde foi criado o Cluster de Kubernetes
+- **compartment_ocid** compartimento onde foi criado o Cluster de Kubernetes
 
 Depois crie uma [política](https://docs.oracle.com/en-us/iaas/Content/Identity/Tasks/callingservicesfrominstances.htm) que permite que o Dynamic Group possa utilizar os recursos do compartimento.
 
