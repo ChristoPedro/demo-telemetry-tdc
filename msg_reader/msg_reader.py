@@ -3,7 +3,6 @@ import mysql.connector
 import json
 import base64
 import os
-from opentelemetry.instrumentation.mysql import MySQLInstrumentor
 from opentelemetry import trace, context
 from opentelemetry.trace import NonRecordingSpan, SpanContext, TraceFlags
 
@@ -45,8 +44,6 @@ def mysql_connect(host, user ,pw):
 
 @tracer.start_as_current_span("insert_data")
 def insert_data(mydb, messages):
-
-    MySQLInstrumentor().instrument()
 
     mycursor = mydb.cursor()
     sql = f"insert into otel_demo.Dados (dados) values ({json.dumps(messages)})"
