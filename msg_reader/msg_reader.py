@@ -3,7 +3,9 @@ import mysql.connector
 import json
 import base64
 import os
-from opentelemetry import trace
+from opentelemetry.instrumentation.mysql import MySQLInstrumentor
+from opentelemetry import trace, context
+from opentelemetry.trace import NonRecordingSpan, SpanContext, TraceFlags
 
 tracer = trace.get_tracer("get_message.tracer")
 
@@ -43,8 +45,11 @@ def mysql_connect(host, user ,pw):
 
 @tracer.start_as_current_span("insert_data")
 def insert_data(mydb, messages):
+
+    MySQLInstrumentor().instrument()
+
     mycursor = mydb.cursor()
-    sql = f"insert into otel_demo.Dados (dados) values ({json.dumps(messages.content)})"
+    sql = f"insert into otel_demo.Dados (dados) values ({json.dumps(messages)})"
     mycursor.execute(sql)
     mydb.commit()
 
@@ -64,12 +69,20 @@ def delete_message(queue_id, messages):
     queue_id=queue_id,
     message_receipt=messages.receipt)
     return delete_message_response.headers
-    
+
+def get_propagated_context(trace_id, span_id):
+    # Create a SpanContext from the extracted trace and span IDs
+    return SpanContext(
+        trace_id=trace_id,
+        span_id=span_id,
+        is_remote=True,
+        trace_flags=TraceFlags(TraceFlags.SAMPLED),
+    )
+
 @tracer.start_as_current_span("process_msg")    
 def process_data(mydb, messages, queue_id):
-    insert_data(mydb, messages)
+    insert_data(mydb, messages.content)
     delete_message(queue_id, messages)
-
 
 if __name__ == "__main__":
 
@@ -79,4 +92,7 @@ if __name__ == "__main__":
         messages = get_message(queue_id)
         if len(messages) > 0:
             for msg in messages:
+                prop = msg.metadata.custom_properties
+                ctx = trace.set_span_in_context(NonRecordingSpan(get_propagated_context(int(prop['trace_id']), int(prop['span_id']))))
+                context.attach(ctx)
                 process_data(db, msg, queue_id)
