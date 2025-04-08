@@ -1,14 +1,14 @@
-apiVersion: opentelemetry.io/v1alpha1
+apiVersion: opentelemetry.io/v1beta1
 kind: OpenTelemetryCollector
 metadata:
   name: simplest
 spec:
-  config: |
+  config:
     receivers:
       otlp:
         protocols:
-          grpc:
-          http:
+          grpc: {}
+          http: {}
     exporters:
       otlphttp:
         endpoint: "<apm_endpoint>/20200101/opentelemetry/private"
