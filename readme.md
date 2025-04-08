@@ -31,7 +31,7 @@ Objetivo é criar um ambiente com exemplo da utilização de OpenTelemetry para 
 - Instalar Cert Manager: 
 
 ```bash
-kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.12.0/cert-manager.yaml
+kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.17.1/cert-manager.yaml
 ```
 
 - Instalar OpenTelemetry Kubernetes Operator:
