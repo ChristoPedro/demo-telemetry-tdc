@@ -44,3 +44,9 @@ spec:
   sampler:
     type: parentbased_traceidratio
     argument: "1"
+  python:
+    env:
+      - name: OTEL_PYTHON_ENABLED_INSTRUMENTATIONS
+        value: "mysql"
+      - name: OTEL_LOG_LEVEL
+        value: "debug"

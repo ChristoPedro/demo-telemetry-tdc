@@ -1,5 +1,5 @@
 import oci
-import mysql.connector
+import pymysql
 import json
 import base64
 import os
@@ -33,11 +33,13 @@ def get_text_secret(secret_ocid):
 
 def mysql_connect(host, user, pw):
     try:
-        return mysql.connector.connect(
+        return pymysql.connect(
             host=host,
             port=3306,
+            database="otel_demo",
             user=user,
-            password=pw
+            password=pw,
+            autocommit=True
         )
     except Exception as ex:
         print("ERROR: failed to connect to MySQL", ex, flush=True)
@@ -45,11 +47,9 @@ def mysql_connect(host, user, pw):
 
 @tracer.start_as_current_span("insert_data")
 def insert_data(mydb, messages):
-
-    mycursor = mydb.cursor()
-    sql = "INSERT INTO otel_demo.Dados (dados) VALUES (%s)"
-    mycursor.execute(sql, (json.dumps(messages),))
-    mydb.commit()
+    with mydb.cursor() as mycursor:
+        sql = "INSERT INTO Dados (dados) VALUES (%s)"
+        mycursor.execute(sql, (json.dumps(messages),))
 
 def get_message(queue_id):
     
@@ -91,9 +91,6 @@ if __name__ == "__main__":
         if len(messages) > 0:
             for msg in messages:
                 prop = msg.metadata.custom_properties
-                span = NonRecordingSpan(get_propagated_context(
-                    int(prop['trace_id']),
-                    int(prop['span_id'])
-                ))
-                with trace.use_span(span, end_on_exit=False):
-                    process_data(db, msg, queue_id)
+                ctx = trace.set_span_in_context(NonRecordingSpan(get_propagated_context(int(prop['trace_id']), int(prop['span_id']))))
+                context.attach(ctx)
+                process_data(db, msg, queue_id)

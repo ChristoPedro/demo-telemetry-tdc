@@ -1,4 +1,4 @@
 oci
-mysql-connector-python==8.4.0
+pymysql
 opentelemetry-api
 opentelemetry-sdk
